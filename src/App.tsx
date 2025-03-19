@@ -4,6 +4,8 @@ function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [message, setMessage] = useState<string>("");
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -21,6 +23,37 @@ function App() {
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';
   }, []);
+
+  useEffect(() => {
+    // Check for API key in localStorage
+    const savedApiKey = localStorage.getItem('apiKey');
+    setApiKey(savedApiKey);
+    setIsLoading(false);
+  }, []);
+  
+  const handleApiKeySubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const input = form.elements.namedItem('apiKeyInput') as HTMLInputElement;
+    const key = input.value.trim();
+    
+    if (key) {
+      localStorage.setItem('apiKey', key);
+      setApiKey(key);
+      initializeApp(key);
+    }
+  };
+  
+  const initializeApp = (key: string) => {
+    // Your initialization code here
+    console.log('Initializing app with API key:', key);
+  };
+  
+  useEffect(() => {
+    if (apiKey) {
+      initializeApp(apiKey);
+    }
+  }, [apiKey]);
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -116,6 +149,32 @@ function App() {
     }
   };
 
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!apiKey) {
+    // Show setup screen
+    return (
+      <div id="setupScreen">
+        <div className="setup-container">
+          <h2>Welcome to the App</h2>
+          <p>Please enter your API key to continue:</p>
+          <form onSubmit={handleApiKeySubmit}>
+            <input 
+              type="text" 
+              name="apiKeyInput" 
+              placeholder="Enter your API key" 
+              required 
+            />
+            <button type="submit">Submit</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show main app content
   return (
     <div className="min-h-screen bg-black">
       <canvas
@@ -134,6 +193,16 @@ function App() {
           {message}
         </div>
       )}
+      <h1>Your App</h1>
+      <p>API Key is set</p>
+      
+      {/* Button to change API key */}
+      <button onClick={() => {
+        localStorage.removeItem('apiKey');
+        setApiKey(null);
+      }}>
+        Change API Key
+      </button>
     </div>
   );
 }
